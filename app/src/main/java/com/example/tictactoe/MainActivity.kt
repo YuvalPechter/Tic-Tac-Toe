@@ -1,5 +1,9 @@
 package com.example.tictactoe
 
+import android.annotation.SuppressLint
+import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Shader
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -9,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.tictactoe.databinding.ActivityMainBinding
+import androidx.core.graphics.toColorInt
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,6 +40,22 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        binding.ticTacToe.post {
+            val paint = binding.ticTacToe.paint
+            val width = paint.measureText(binding.ticTacToe.text.toString())
+
+            val textShader = LinearGradient(
+                0f, 0f, width, binding.ticTacToe.textSize,
+                intArrayOf(
+                    "#0000FF".toColorInt(),
+                    "#FF0000".toColorInt()
+                ), null, Shader.TileMode.CLAMP
+            )
+            binding.ticTacToe.paint.shader = textShader
+            binding.ticTacToe.invalidate()
+        }
+
         initBoard()
     }
 
@@ -59,14 +80,13 @@ class MainActivity : AppCompatActivity() {
 
         if(checkForVictory(NOUGHT))
         {
-            result("Noughts Win!")
+            result("Noughts Wins!")
         }
         else if(checkForVictory(CROSS))
         {
-            result("Crosses Win!")
+            result("Crosses Wins!")
         }
-
-        if(fullBoard())
+        else if(fullBoard())
         {
             result("Draw")
         }
@@ -105,7 +125,7 @@ class MainActivity : AppCompatActivity() {
     {
         AlertDialog.Builder(this)
             .setTitle(title)
-            .setPositiveButton("New Game")
+            .setPositiveButton("Play again")
             { _,_ ->
                 resetBoard()
             }
@@ -129,7 +149,7 @@ class MainActivity : AppCompatActivity() {
     {
         for(button in boardList)
         {
-            if(button.text == "")
+            if(button.text === "")
                 return false
         }
         return true
@@ -144,24 +164,27 @@ class MainActivity : AppCompatActivity() {
         {
             button.text = NOUGHT
             currentTurn = Turn.CROSS
+            button.setTextColor(Color.BLUE)
         }
         else
         {
             button.text = CROSS
             currentTurn = Turn.NOUGHT
+            button.setTextColor(Color.RED)
         }
         setTurnLabel()
     }
 
+    @SuppressLint("SetTextI18n")
     private fun setTurnLabel()
     {
-        var turnText = ""
-        turnText = if(currentTurn === Turn.CROSS)
-            "Turn $CROSS"
-        else
-            "Turn $NOUGHT"
-
-        binding.turnTitle.text = turnText
+        if(currentTurn === Turn.CROSS) {
+            binding.turnTitle.text = "$CROSS's turn!"
+            binding.turnTitle.setTextColor(Color.RED)
+        } else {
+            binding.turnTitle.text = "$NOUGHT's turn!"
+            binding.turnTitle.setTextColor(Color.BLUE)
+        }
     }
 
     companion object
