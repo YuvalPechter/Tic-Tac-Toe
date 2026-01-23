@@ -1,11 +1,14 @@
 package com.example.tictactoe
 
+import android.graphics.LinearGradient
+import android.graphics.Shader
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.tictactoe.databinding.ActivityMainBinding
@@ -27,15 +30,45 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        setupUI()
+        setupTextGradient()
+        initGame()
+    }
+
+    private fun setupUI() {
         enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+    }
+
+    private fun setupTextGradient() {
+        binding.ticTacToe.post {
+            val paint = binding.ticTacToe.paint
+            val width = paint.measureText(binding.ticTacToe.text.toString())
+
+            val colorStart = ContextCompat.getColor(this, R.color.blue)
+            val colorEnd = ContextCompat.getColor(this, R.color.red)
+
+            binding.ticTacToe.paint.shader = LinearGradient(
+                0f, 0f, width, binding.ticTacToe.textSize,
+                intArrayOf(colorStart, colorEnd),
+                null,
+                Shader.TileMode.CLAMP
+            )
+            binding.ticTacToe.invalidate()
+        }
+    }
+
+    private fun initGame() {
         initBoard()
+        setTurnLabel()
     }
 
     private fun initBoard()
@@ -53,22 +86,15 @@ class MainActivity : AppCompatActivity() {
 
     fun boardTapped(view: View)
     {
-        if(view !is Button)
-            return
+        if (view !is Button || view.text != "") return
         addToBoard(view)
 
-        if(checkForVictory(NOUGHT))
-        {
-            result("Noughts Win!")
-        }
-        else if(checkForVictory(CROSS))
-        {
-            result("Crosses Win!")
-        }
-
-        if(fullBoard())
-        {
-            result("Draw")
+        if (checkForVictory(NOUGHT)) {
+            result(getString(R.string.winning_message, NOUGHT))
+        } else if (checkForVictory(CROSS)) {
+            result(getString(R.string.winning_message, CROSS))
+        } else if (fullBoard()) {
+            result(getString(R.string.draw_message))
         }
     }
 
@@ -99,13 +125,13 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
-    private fun match(button: Button, symbol : String): Boolean = button.text === symbol
+    private fun match(button: Button, symbol : String): Boolean = button.text == symbol
 
     private fun result(title: String)
     {
         AlertDialog.Builder(this)
             .setTitle(title)
-            .setPositiveButton("New Game")
+            .setPositiveButton("Play again")
             { _,_ ->
                 resetBoard()
             }
@@ -137,31 +163,30 @@ class MainActivity : AppCompatActivity() {
 
     private fun addToBoard(button: Button)
     {
-        if(button.text !== "")
+        if(button.text != "")
             return
 
-        if(currentTurn === Turn.NOUGHT)
+        if(currentTurn == Turn.NOUGHT)
         {
             button.text = NOUGHT
             currentTurn = Turn.CROSS
+            button.setTextColor(ContextCompat.getColor(this, R.color.blue))
         }
         else
         {
             button.text = CROSS
             currentTurn = Turn.NOUGHT
+            button.setTextColor(ContextCompat.getColor(this, R.color.red))
         }
         setTurnLabel()
     }
 
-    private fun setTurnLabel()
-    {
-        var turnText = ""
-        turnText = if(currentTurn === Turn.CROSS)
-            "Turn $CROSS"
-        else
-            "Turn $NOUGHT"
+    private fun setTurnLabel() {
+        val player = if (currentTurn == Turn.CROSS) CROSS else NOUGHT
+        val color = if (currentTurn == Turn.CROSS) R.color.red else R.color.blue
 
-        binding.turnTitle.text = turnText
+        binding.turnTitle.text = getString(R.string.turn_label, player)
+        binding.turnTitle.setTextColor(ContextCompat.getColor(this, color))
     }
 
     companion object
