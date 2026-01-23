@@ -1,7 +1,5 @@
 package com.example.tictactoe
 
-import android.annotation.SuppressLint
-import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Shader
 import android.os.Bundle
@@ -10,10 +8,10 @@ import android.widget.Button
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.tictactoe.databinding.ActivityMainBinding
-import androidx.core.graphics.toColorInt
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,31 +30,45 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        setupUI()
+        setupTextGradient()
+        initGame()
+    }
+
+    private fun setupUI() {
         enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+    }
 
+    private fun setupTextGradient() {
         binding.ticTacToe.post {
             val paint = binding.ticTacToe.paint
             val width = paint.measureText(binding.ticTacToe.text.toString())
 
-            val textShader = LinearGradient(
+            val colorStart = ContextCompat.getColor(this, R.color.blue)
+            val colorEnd = ContextCompat.getColor(this, R.color.red)
+
+            binding.ticTacToe.paint.shader = LinearGradient(
                 0f, 0f, width, binding.ticTacToe.textSize,
-                intArrayOf(
-                    "#0000FF".toColorInt(),
-                    "#FF0000".toColorInt()
-                ), null, Shader.TileMode.CLAMP
+                intArrayOf(colorStart, colorEnd),
+                null,
+                Shader.TileMode.CLAMP
             )
-            binding.ticTacToe.paint.shader = textShader
             binding.ticTacToe.invalidate()
         }
+    }
 
+    private fun initGame() {
         initBoard()
+        setTurnLabel()
     }
 
     private fun initBoard()
@@ -74,21 +86,15 @@ class MainActivity : AppCompatActivity() {
 
     fun boardTapped(view: View)
     {
-        if(view !is Button)
-            return
+        if (view !is Button || view.text != "") return
         addToBoard(view)
 
-        if(checkForVictory(NOUGHT))
-        {
-            result("Noughts Wins!")
-        }
-        else if(checkForVictory(CROSS))
-        {
-            result("Crosses Wins!")
-        }
-        else if(fullBoard())
-        {
-            result("Draw")
+        if (checkForVictory(NOUGHT)) {
+            result(getString(R.string.winning_message, NOUGHT))
+        } else if (checkForVictory(CROSS)) {
+            result(getString(R.string.winning_message, CROSS))
+        } else if (fullBoard()) {
+            result(getString(R.string.draw_message))
         }
     }
 
@@ -119,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
-    private fun match(button: Button, symbol : String): Boolean = button.text === symbol
+    private fun match(button: Button, symbol : String): Boolean = button.text == symbol
 
     private fun result(title: String)
     {
@@ -149,7 +155,7 @@ class MainActivity : AppCompatActivity() {
     {
         for(button in boardList)
         {
-            if(button.text === "")
+            if(button.text == "")
                 return false
         }
         return true
@@ -157,34 +163,30 @@ class MainActivity : AppCompatActivity() {
 
     private fun addToBoard(button: Button)
     {
-        if(button.text !== "")
+        if(button.text != "")
             return
 
-        if(currentTurn === Turn.NOUGHT)
+        if(currentTurn == Turn.NOUGHT)
         {
             button.text = NOUGHT
             currentTurn = Turn.CROSS
-            button.setTextColor(Color.BLUE)
+            button.setTextColor(ContextCompat.getColor(this, R.color.blue))
         }
         else
         {
             button.text = CROSS
             currentTurn = Turn.NOUGHT
-            button.setTextColor(Color.RED)
+            button.setTextColor(ContextCompat.getColor(this, R.color.red))
         }
         setTurnLabel()
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun setTurnLabel()
-    {
-        if(currentTurn === Turn.CROSS) {
-            binding.turnTitle.text = "$CROSS's turn!"
-            binding.turnTitle.setTextColor(Color.RED)
-        } else {
-            binding.turnTitle.text = "$NOUGHT's turn!"
-            binding.turnTitle.setTextColor(Color.BLUE)
-        }
+    private fun setTurnLabel() {
+        val player = if (currentTurn == Turn.CROSS) CROSS else NOUGHT
+        val color = if (currentTurn == Turn.CROSS) R.color.red else R.color.blue
+
+        binding.turnTitle.text = getString(R.string.turn_label, player)
+        binding.turnTitle.setTextColor(ContextCompat.getColor(this, color))
     }
 
     companion object
